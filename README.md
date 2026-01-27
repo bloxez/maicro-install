@@ -1,20 +1,12 @@
 # mAIcro
 
-GraphQL-first rapid prototyping platform with embedded IDE, chain operations engine, and comprehensive security testing.
+mAIcro:G2A is your gateway to anything. Use rapid prototyping to explore your idea, manage data, integrate with external systems and use AI.
+
+## Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) must be installed and running
 
 ## Quick Start
-
-### macOS / Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh
-```
-
-With custom data directory:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh -s -- ~/my-maicro-data
-```
 
 ### Windows (PowerShell)
 
@@ -28,9 +20,33 @@ With custom data directory:
 & ([scriptblock]::Create((irm https://raw.githubusercontent.com/bloxez/maicro-install/main/run.ps1))) -DataDir "D:\maicro-data"
 ```
 
-## Prerequisites
+### Windows (WSL)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) must be installed and running
+If you use Windows Subsystem for Linux:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh
+```
+
+To store data on your Windows drive instead of WSL:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh -s -- /mnt/c/Users/YourUsername/maicro-data
+```
+
+> **Note:** Requires Docker Desktop with "Use the WSL 2 based engine" enabled in Settings → General.
+
+### macOS / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh
+```
+
+With custom data directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh -s -- ~/my-maicro-data
+```
 
 ## What Gets Installed
 
