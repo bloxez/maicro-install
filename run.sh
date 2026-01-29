@@ -66,6 +66,67 @@ DATA_DIR=$(cd "$(dirname "$DATA_DIR")" 2>/dev/null && pwd)/$(basename "$DATA_DIR
 printf "${YELLOW}📁 Data directory: ${DATA_DIR}${NC}\n"
 mkdir -p "$DATA_DIR"
 
+# Create update script
+cat > "${DATA_DIR}/update.sh" << 'EOF'
+#!/bin/sh
+# mAIcro Update Script - Pull latest image and restart container
+
+set -e
+
+IMAGE="bloxez/maicro-g2a:0.1.0-alpha.1"
+CONTAINER_NAME="maicro"
+
+echo "🔍 Checking for updates..."
+
+# Get current image digest
+CURRENT_DIGEST=$(docker inspect --format='{{.Image}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
+
+# Pull latest
+echo "📦 Pulling latest image..."
+docker pull "$IMAGE"
+
+# Get new image digest
+NEW_DIGEST=$(docker inspect --format='{{.Id}}' "$IMAGE" 2>/dev/null || echo "")
+
+if [ "$CURRENT_DIGEST" = "$NEW_DIGEST" ]; then
+    echo "✅ Already on latest version"
+    exit 0
+fi
+
+echo "🔄 New version available, updating..."
+
+# Stop and remove old container
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm "$CONTAINER_NAME" 2>/dev/null || true
+
+# Get port from environment or default
+PORT="${MAICRO_PORT:-4321}"
+
+# Restart with same settings
+echo "🚀 Starting updated container..."
+docker run -d \
+    --name "$CONTAINER_NAME" \
+    -p "${PORT}:3456" \
+    -v "$(pwd):/app/runtime/userdata" \
+    -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
+    --add-host=host.docker.internal:host-gateway \
+    --restart unless-stopped \
+    "$IMAGE"
+
+sleep 2
+
+if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
+    echo "✅ Update complete!"
+    echo "🌐 mAIcro: http://localhost:${PORT}/ide"
+else
+    echo "❌ Failed to start updated container"
+    docker logs "$CONTAINER_NAME"
+    exit 1
+fi
+EOF
+
+chmod +x "${DATA_DIR}/update.sh"
+
 # Stop existing container if running
 if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
     printf "${YELLOW}🛑 Stopping existing mAIcro container...${NC}\n"
@@ -102,6 +163,7 @@ if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
     echo "  📁 Data:     ${DATA_DIR}"
     echo ""
     echo "Commands:"
+    printf "  Update:  ${YELLOW}${DATA_DIR}/update.sh${NC}\n"
     printf "  Stop:    ${YELLOW}docker stop maicro${NC}\n"
     printf "  Start:   ${YELLOW}docker start maicro${NC}\n"
     printf "  Logs:    ${YELLOW}docker logs -f maicro${NC}\n"

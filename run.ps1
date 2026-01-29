@@ -55,6 +55,76 @@ if (-not (Test-Path $DataDir)) {
     New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 }
 
+# Create update script
+$updateScript = @'
+# mAIcro Update Script - Pull latest image and restart container
+
+$ErrorActionPreference = "Stop"
+
+$Image = "bloxez/maicro-g2a:0.1.0-alpha.1"
+$ContainerName = "maicro"
+$Port = if ($env:MAICRO_PORT) { $env:MAICRO_PORT } else { 4321 }
+
+Write-Host "🔍 Checking for updates..."
+
+# Get current image digest
+$currentDigest = docker inspect --format='{{.Image}}' $ContainerName 2>$null
+if (-not $currentDigest) { $currentDigest = "" }
+
+# Pull latest
+Write-Host "📦 Pulling latest image..."
+docker pull $Image
+
+# Get new image digest
+$newDigest = docker inspect --format='{{.Id}}' $Image 2>$null
+
+if ($currentDigest -eq $newDigest) {
+    Write-Host "✅ Already on latest version" -ForegroundColor Green
+    exit 0
+}
+
+Write-Host "🔄 New version available, updating..." -ForegroundColor Yellow
+
+# Stop and remove old container
+docker stop $ContainerName 2>$null | Out-Null
+docker rm $ContainerName 2>$null | Out-Null
+
+# Get OpenRouter API key from environment if set
+$OpenRouterKey = $env:OPENROUTER_API_KEY
+
+# Restart with same settings
+Write-Host "🚀 Starting updated container..."
+$dockerArgs = @(
+    "run", "-d",
+    "--name", $ContainerName,
+    "-p", "${Port}:3456",
+    "-v", "${PSScriptRoot}:/app/runtime/userdata",
+    "--restart", "unless-stopped"
+)
+
+if ($OpenRouterKey) {
+    $dockerArgs += @("-e", "OPENROUTER_API_KEY=$OpenRouterKey")
+}
+
+$dockerArgs += $Image
+docker @dockerArgs | Out-Null
+
+Start-Sleep -Seconds 2
+
+$running = docker ps -q -f "name=$ContainerName"
+if ($running) {
+    Write-Host "✅ Update complete!" -ForegroundColor Green
+    Write-Host "🌐 mAIcro: http://localhost:${Port}/ide" -ForegroundColor Cyan
+} else {
+    Write-Host "❌ Failed to start updated container" -ForegroundColor Red
+    docker logs $ContainerName
+    exit 1
+}
+'@
+
+$updateScriptPath = Join-Path $DataDir "update.ps1"
+Set-Content -Path $updateScriptPath -Value $updateScript -Force
+
 # Stop existing container if running
 $existing = docker ps -q -f "name=$ContainerName" 2>$null
 if ($existing) {
@@ -103,6 +173,7 @@ if ($running) {
     Write-Host "  📁 Data:     $DataDir"
     Write-Host ""
     Write-Host "Commands:" -ForegroundColor White
+    Write-Host "  Update:  " -NoNewline; Write-Host "powershell $DataDir\update.ps1" -ForegroundColor Yellow
     Write-Host "  Stop:    " -NoNewline; Write-Host "docker stop maicro" -ForegroundColor Yellow
     Write-Host "  Start:   " -NoNewline; Write-Host "docker start maicro" -ForegroundColor Yellow
     Write-Host "  Logs:    " -NoNewline; Write-Host "docker logs -f maicro" -ForegroundColor Yellow
