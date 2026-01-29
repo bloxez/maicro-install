@@ -7,7 +7,7 @@
 set -e
 
 # Configuration
-IMAGE="bloxez/maicro-g2a:0.1.0-alpha.1"
+IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
 PORT="${MAICRO_PORT:-4321}"
 DEFAULT_DATA_DIR="$HOME/maicro-data"
@@ -73,7 +73,7 @@ cat > "${DATA_DIR}/update.sh" << 'EOF'
 
 set -e
 
-IMAGE="bloxez/maicro-g2a:0.1.0-alpha.1"
+IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
 
 echo "🔍 Checking for updates..."

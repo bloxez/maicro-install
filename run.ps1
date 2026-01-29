@@ -8,7 +8,7 @@ param(
 )
 
 # Configuration
-$Image = "bloxez/maicro-g2a:0.1.0-alpha.1"
+$Image = "bloxez/maicro-g2a:latest"
 $ContainerName = "maicro"
 
 Write-Host ""
@@ -61,7 +61,7 @@ $updateScript = @'
 
 $ErrorActionPreference = "Stop"
 
-$Image = "bloxez/maicro-g2a:0.1.0-alpha.1"
+$Image = "bloxez/maicro-g2a:latest"
 $ContainerName = "maicro"
 $Port = if ($env:MAICRO_PORT) { $env:MAICRO_PORT } else { 4321 }
 
