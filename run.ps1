@@ -125,12 +125,12 @@ if ($running) {
 $updateScriptPath = Join-Path $DataDir "update.ps1"
 Set-Content -Path $updateScriptPath -Value $updateScript -Force
 
-# Stop existing container if running
-$existing = docker ps -q -f "name=$ContainerName" 2>$null
+# Stop and remove existing container if it exists
+$existing = docker ps -aq -f "name=$ContainerName" 2>$null
 if ($existing) {
     Write-Host "🛑 Stopping existing mAIcro container..." -ForegroundColor Yellow
-    docker stop $ContainerName | Out-Null
-    docker rm $ContainerName | Out-Null
+    docker stop $ContainerName 2>$null | Out-Null
+    docker rm $ContainerName 2>$null | Out-Null
 }
 
 # Pull latest image

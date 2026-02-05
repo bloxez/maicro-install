@@ -127,11 +127,11 @@ EOF
 
 chmod +x "${DATA_DIR}/update.sh"
 
-# Stop existing container if running
-if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
+# Stop and remove existing container if it exists
+if docker ps -aq -f name="$CONTAINER_NAME" | grep -q .; then
     printf "${YELLOW}🛑 Stopping existing mAIcro container...${NC}\n"
-    docker stop "$CONTAINER_NAME" > /dev/null
-    docker rm "$CONTAINER_NAME" > /dev/null
+    docker stop "$CONTAINER_NAME" > /dev/null 2>&1 || true
+    docker rm "$CONTAINER_NAME" > /dev/null 2>&1 || true
 fi
 
 # Pull latest image
