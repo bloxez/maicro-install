@@ -47,14 +47,28 @@ fi
 
 # Check Docker is running
 if ! docker info > /dev/null 2>&1; then
-    printf "${RED}❌ Docker daemon is not running or you lack permissions.${NC}\n"
     echo ""
-    echo "Try one of these:"
-    echo "  - Start Docker:          sudo systemctl start docker"
-    echo "  - Add user to group:     sudo usermod -aG docker \$USER && newgrp docker"
-    echo "  - Start Docker Desktop:  (macOS/Windows)"
+    printf "${YELLOW}  Docker needs a little setup before we can continue.${NC}\n"
+    printf "${YELLOW}  You may be asked for your password.${NC}\n"
     echo ""
-    exit 1
+
+    # Start Docker service if possible
+    if command -v systemctl > /dev/null 2>&1; then
+        printf "  Starting Docker service...\n"
+        sudo systemctl start docker 2>/dev/null || true
+        sleep 1
+    fi
+
+    # Add user to docker group and apply immediately
+    if ! docker info > /dev/null 2>&1; then
+        printf "  Setting up Docker permissions for your user...\n"
+        sudo usermod -aG docker "$USER"
+        # Apply group change immediately via sg and re-run this script
+        printf "${GREEN}  ✅ Done! Re-running setup with new permissions...${NC}\n"
+        echo ""
+        sg docker -c "sh $0 $*"
+        exit $?
+    fi
 fi
 
 printf "${GREEN}✅ Docker is running${NC}\n"
