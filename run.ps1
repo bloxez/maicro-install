@@ -48,11 +48,15 @@ Write-Host "✅ Docker is running" -ForegroundColor Green
 
 # Resolve to absolute path
 $DataDir = [System.IO.Path]::GetFullPath($DataDir)
+$AppDataDir = Join-Path $DataDir "data"
 
 # Create data directory
 Write-Host "📁 Data directory: $DataDir" -ForegroundColor Yellow
 if (-not (Test-Path $DataDir)) {
     New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
+}
+if (-not (Test-Path $AppDataDir)) {
+    New-Item -ItemType Directory -Path $AppDataDir -Force | Out-Null
 }
 
 # Create update script
@@ -64,6 +68,7 @@ $ErrorActionPreference = "Stop"
 $Image = "bloxez/maicro-g2a:latest"
 $ContainerName = "maicro"
 $Port = if ($env:MAICRO_PORT) { $env:MAICRO_PORT } else { 4321 }
+$AppDataDir = Join-Path $PSScriptRoot "data"
 
 Write-Host "🔍 Checking for updates..."
 
@@ -99,6 +104,7 @@ $dockerArgs = @(
     "--name", $ContainerName,
     "-p", "${Port}:3456",
     "-v", "${PSScriptRoot}:/app/runtime/userdata",
+    "-v", "${AppDataDir}:/app/data",
     "--restart", "unless-stopped"
 )
 
@@ -147,6 +153,7 @@ $dockerArgs = @(
     "--name", $ContainerName,
     "-p", "${Port}:3456",
     "-v", "${DataDir}:/app/runtime/userdata",
+    "-v", "${AppDataDir}:/app/data",
     "--restart", "unless-stopped"
 )
 
@@ -171,6 +178,7 @@ if ($running) {
     Write-Host "  🌐 IDE:      " -NoNewline; Write-Host "http://localhost:${Port}/ide" -ForegroundColor Cyan
     Write-Host "  📊 GraphQL:  " -NoNewline; Write-Host "http://localhost:${Port}/graphql" -ForegroundColor Cyan
     Write-Host "  📁 Data:     $DataDir"
+    Write-Host "  🗄️  DB Data:  $AppDataDir"
     Write-Host ""
     Write-Host "Commands:" -ForegroundColor White
     Write-Host "  Update:  " -NoNewline; Write-Host "powershell $DataDir\update.ps1" -ForegroundColor Yellow

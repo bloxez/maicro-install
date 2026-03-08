@@ -33,6 +33,7 @@ echo ""
 
 # Parse arguments
 DATA_DIR="${1:-$DEFAULT_DATA_DIR}"
+APP_DATA_DIR=""
 
 # Check Docker is installed
 if ! command -v docker > /dev/null 2>&1; then
@@ -75,10 +76,12 @@ printf "${GREEN}✅ Docker is running${NC}\n"
 
 # Resolve to absolute path
 DATA_DIR=$(cd "$(dirname "$DATA_DIR")" 2>/dev/null && pwd)/$(basename "$DATA_DIR") || DATA_DIR="$DEFAULT_DATA_DIR"
+APP_DATA_DIR="${DATA_DIR}/data"
 
 # Create data directory
 printf "${YELLOW}📁 Data directory: ${DATA_DIR}${NC}\n"
 mkdir -p "$DATA_DIR"
+mkdir -p "$APP_DATA_DIR"
 
 # Create update script
 cat > "${DATA_DIR}/update.sh" << 'EOF'
@@ -89,6 +92,7 @@ set -e
 
 IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
+APP_DATA_DIR="$(pwd)/data"
 
 echo "🔍 Checking for updates..."
 
@@ -122,6 +126,7 @@ docker run -d \
     --name "$CONTAINER_NAME" \
     -p "${PORT}:3456" \
     -v "$(pwd):/app/runtime/userdata" \
+    -v "${APP_DATA_DIR}:/app/data" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \
@@ -158,6 +163,7 @@ docker run -d \
     --name "$CONTAINER_NAME" \
     -p "${PORT}:3456" \
     -v "${DATA_DIR}:/app/runtime/userdata" \
+    -v "${APP_DATA_DIR}:/app/data" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \
@@ -175,6 +181,7 @@ if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
     printf "  🌐 IDE:      ${CYAN}http://localhost:${PORT}/ide${NC}\n"
     printf "  📊 GraphQL:  ${CYAN}http://localhost:${PORT}/graphql${NC}\n"
     echo "  📁 Data:     ${DATA_DIR}"
+    echo "  🗄️  DB Data:  ${APP_DATA_DIR}"
     echo ""
     echo "Commands:"
     printf "  Update:  ${YELLOW}${DATA_DIR}/update.sh${NC}\n"

@@ -103,10 +103,13 @@ Windows:
 
 ## Data Persistence
 
-All data is stored in your specified data directory:
-- Database files
-- Project configurations  
-- User chains and types
+All data is stored in your specified data directory using two mounts:
+- `<DataDir> -> /app/runtime/userdata` (projects, config, chains, types)
+- `<DataDir>/data -> /app/data` (PostgreSQL and service data)
+
+This means PostgreSQL is persisted on the host under:
+- Linux/macOS: `~/maicro-data/data/postgres` (or your custom `DataDir`)
+- Windows: `%USERPROFILE%\maicro-data\data\postgres` (or your custom `DataDir`)
 
 To reset, stop the container and delete the data directory.
 
