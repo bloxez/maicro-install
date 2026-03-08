@@ -146,6 +146,55 @@ EOF
 
 chmod +x "${DATA_DIR}/update.sh"
 
+# Create remove script
+cat > "${DATA_DIR}/remove.sh" << 'EOF'
+#!/bin/sh
+# mAIcro Remove Script - Remove container and optionally remove persisted data
+
+set -e
+
+CONTAINER_NAME="maicro"
+DATA_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+echo "⚠️  This will remove the mAIcro container: ${CONTAINER_NAME}"
+printf "Remove container now? [y/N]: "
+read -r CONFIRM_CONTAINER
+
+case "$CONFIRM_CONTAINER" in
+    y|Y|yes|YES)
+        echo "🛑 Stopping and removing container..."
+        docker stop "$CONTAINER_NAME" 2>/dev/null || true
+        docker rm "$CONTAINER_NAME" 2>/dev/null || true
+        ;;
+    *)
+        echo "Cancelled."
+        exit 0
+        ;;
+esac
+
+echo "✅ Container removed (or was not present)."
+echo ""
+echo "Persisted data directory: ${DATA_DIR}"
+printf "Also remove persisted data from host? [y/N]: "
+read -r CONFIRM_DATA
+
+case "$CONFIRM_DATA" in
+    y|Y|yes|YES)
+        echo "🗑️  Removing persisted data..."
+        find "$DATA_DIR" -mindepth 1 -maxdepth 1 \
+            ! -name "update.sh" \
+            ! -name "remove.sh" \
+            -exec rm -rf {} +
+        echo "✅ Persisted data removed."
+        ;;
+    *)
+        echo "Data kept at: ${DATA_DIR}"
+        ;;
+esac
+EOF
+
+chmod +x "${DATA_DIR}/remove.sh"
+
 # Stop and remove existing container if it exists
 if docker ps -aq -f name="$CONTAINER_NAME" | grep -q .; then
     printf "${YELLOW}🛑 Stopping existing mAIcro container...${NC}\n"
@@ -185,10 +234,11 @@ if docker ps -q -f name="$CONTAINER_NAME" | grep -q .; then
     echo ""
     echo "Commands:"
     printf "  Update:  ${YELLOW}${DATA_DIR}/update.sh${NC}\n"
+    printf "  Remove:  ${YELLOW}${DATA_DIR}/remove.sh${NC}\n"
     printf "  Stop:    ${YELLOW}docker stop maicro${NC}\n"
     printf "  Start:   ${YELLOW}docker start maicro${NC}\n"
     printf "  Logs:    ${YELLOW}docker logs -f maicro${NC}\n"
-    printf "  Remove:  ${YELLOW}docker rm -f maicro${NC}\n"
+    printf "  Force Remove: ${YELLOW}docker rm -f maicro${NC}\n"
     echo ""
 else
     printf "${RED}❌ Failed to start mAIcro${NC}\n"

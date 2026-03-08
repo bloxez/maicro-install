@@ -76,8 +76,17 @@ docker start maicro
 # View logs
 docker logs -f maicro
 
+# Guided remove (asks for confirmation, optional data wipe)
+~/maicro-data/remove.sh
+
 # Remove completely
 docker rm -f maicro
+```
+
+Windows PowerShell:
+
+```powershell
+powershell $env:USERPROFILE\maicro-data\remove.ps1
 ```
 
 ## Configuration

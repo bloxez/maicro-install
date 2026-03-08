@@ -131,6 +131,46 @@ if ($running) {
 $updateScriptPath = Join-Path $DataDir "update.ps1"
 Set-Content -Path $updateScriptPath -Value $updateScript -Force
 
+# Create remove script
+$removeScript = @'
+# mAIcro Remove Script - Remove container and optionally remove persisted data
+
+$ErrorActionPreference = "Stop"
+
+$ContainerName = "maicro"
+$DataDir = $PSScriptRoot
+
+Write-Host "⚠️  This will remove the mAIcro container: $ContainerName" -ForegroundColor Yellow
+$confirmContainer = Read-Host "Remove container now? [y/N]"
+
+if ($confirmContainer -notin @("y", "Y", "yes", "YES")) {
+    Write-Host "Cancelled."
+    exit 0
+}
+
+Write-Host "🛑 Stopping and removing container..."
+docker stop $ContainerName 2>$null | Out-Null
+docker rm $ContainerName 2>$null | Out-Null
+
+Write-Host "✅ Container removed (or was not present)." -ForegroundColor Green
+Write-Host ""
+Write-Host "Persisted data directory: $DataDir"
+$confirmData = Read-Host "Also remove persisted data from host? [y/N]"
+
+if ($confirmData -in @("y", "Y", "yes", "YES")) {
+    Write-Host "🗑️  Removing persisted data..."
+    Get-ChildItem -Path $DataDir -Force |
+        Where-Object { $_.Name -notin @("update.ps1", "remove.ps1") } |
+        Remove-Item -Recurse -Force
+    Write-Host "✅ Persisted data removed." -ForegroundColor Green
+} else {
+    Write-Host "Data kept at: $DataDir"
+}
+'@
+
+$removeScriptPath = Join-Path $DataDir "remove.ps1"
+Set-Content -Path $removeScriptPath -Value $removeScript -Force
+
 # Stop and remove existing container if it exists
 $existing = docker ps -aq -f "name=$ContainerName" 2>$null
 if ($existing) {
@@ -182,10 +222,11 @@ if ($running) {
     Write-Host ""
     Write-Host "Commands:" -ForegroundColor White
     Write-Host "  Update:  " -NoNewline; Write-Host "powershell $DataDir\update.ps1" -ForegroundColor Yellow
+    Write-Host "  Remove:  " -NoNewline; Write-Host "powershell $DataDir\remove.ps1" -ForegroundColor Yellow
     Write-Host "  Stop:    " -NoNewline; Write-Host "docker stop maicro" -ForegroundColor Yellow
     Write-Host "  Start:   " -NoNewline; Write-Host "docker start maicro" -ForegroundColor Yellow
     Write-Host "  Logs:    " -NoNewline; Write-Host "docker logs -f maicro" -ForegroundColor Yellow
-    Write-Host "  Remove:  " -NoNewline; Write-Host "docker rm -f maicro" -ForegroundColor Yellow
+    Write-Host "  Force Remove: " -NoNewline; Write-Host "docker rm -f maicro" -ForegroundColor Yellow
     Write-Host ""
 } else {
     Write-Host "❌ Failed to start mAIcro" -ForegroundColor Red
