@@ -127,6 +127,8 @@ docker run -d \
     -p "${PORT}:3456" \
     -v "$(pwd):/app/runtime/userdata" \
     -v "${APP_DATA_DIR}:/app/data" \
+    -e "HOST_UID=$(id -u)" \
+    -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-}" \
@@ -217,6 +219,8 @@ docker run -d \
     -p "${PORT}:3456" \
     -v "${DATA_DIR}:/app/runtime/userdata" \
     -v "${APP_DATA_DIR}:/app/data" \
+    -e "HOST_UID=$(id -u)" \
+    -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-}" \
