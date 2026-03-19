@@ -112,6 +112,17 @@ if ($OpenRouterKey) {
     $dockerArgs += @("-e", "OPENROUTER_API_KEY=$OpenRouterKey")
 }
 
+# Add project authentication and root management variables
+$DockerDefaultProject = if ($env:MAICRO_DEFAULT_PROJECT) { $env:MAICRO_DEFAULT_PROJECT } else { "maicro" }
+$DockerAdminKey = if ($env:MAICRO_ADMIN_KEY) { $env:MAICRO_ADMIN_KEY } else { "" }
+$DockerRootUser = if ($env:ROOT_USER) { $env:ROOT_USER } else { "" }
+$DockerRootKey = if ($env:ROOT_KEY) { $env:ROOT_KEY } else { "" }
+
+$dockerArgs += @("-e", "MAICRO_DEFAULT_PROJECT=$DockerDefaultProject")
+if ($DockerAdminKey) { $dockerArgs += @("-e", "MAICRO_ADMIN_KEY=$DockerAdminKey") }
+if ($DockerRootUser) { $dockerArgs += @("-e", "ROOT_USER=$DockerRootUser") }
+if ($DockerRootKey) { $dockerArgs += @("-e", "ROOT_KEY=$DockerRootKey") }
+
 $dockerArgs += $Image
 docker @dockerArgs | Out-Null
 
@@ -200,6 +211,17 @@ $dockerArgs = @(
 if ($OpenRouterKey) {
     $dockerArgs += @("-e", "OPENROUTER_API_KEY=$OpenRouterKey")
 }
+
+# Add project authentication and root management variables
+$DockerDefaultProject = if ($env:MAICRO_DEFAULT_PROJECT) { $env:MAICRO_DEFAULT_PROJECT } else { "maicro" }
+$DockerAdminKey = if ($env:MAICRO_ADMIN_KEY) { $env:MAICRO_ADMIN_KEY } else { "" }
+$DockerRootUser = if ($env:ROOT_USER) { $env:ROOT_USER } else { "" }
+$DockerRootKey = if ($env:ROOT_KEY) { $env:ROOT_KEY } else { "" }
+
+$dockerArgs += @("-e", "MAICRO_DEFAULT_PROJECT=$DockerDefaultProject")
+if ($DockerAdminKey) { $dockerArgs += @("-e", "MAICRO_ADMIN_KEY=$DockerAdminKey") }
+if ($DockerRootUser) { $dockerArgs += @("-e", "ROOT_USER=$DockerRootUser") }
+if ($DockerRootKey) { $dockerArgs += @("-e", "ROOT_KEY=$DockerRootKey") }
 
 $dockerArgs += $Image
 
