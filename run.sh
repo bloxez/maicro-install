@@ -131,9 +131,9 @@ docker run -d \
     -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
-    -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-}" \
-    -e "ROOT_USER=${ROOT_USER:-}" \
-    -e "ROOT_KEY=${ROOT_KEY:-}" \
+    -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
+    -e "ROOT_USER=${ROOT_USER:-root_user}" \
+    -e "ROOT_KEY=${ROOT_KEY:-rootg2a}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \
     "$IMAGE"
@@ -223,9 +223,9 @@ docker run -d \
     -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
-    -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-}" \
-    -e "ROOT_USER=${ROOT_USER:-}" \
-    -e "ROOT_KEY=${ROOT_KEY:-}" \
+    -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
+    -e "ROOT_USER=${ROOT_USER:-root_user}" \
+    -e "ROOT_KEY=${ROOT_KEY:-rootg2a}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \
     "$IMAGE" > /dev/null
