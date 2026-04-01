@@ -171,8 +171,9 @@ set -e
 
 IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
-APP_DATA_DIR="$(pwd)/data"
-CONFIG_PATH="$(pwd)/config/config.platform.json"
+DATA_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DATA_DIR="${DATA_DIR}/data"
+CONFIG_PATH="${DATA_DIR}/config/config.platform.json"
 
 echo "🔍 Checking for updates..."
 
@@ -212,7 +213,7 @@ echo "🚀 Starting updated container..."
 docker run -d \
     --name "$CONTAINER_NAME" \
     -p "${PORT}:3456" \
-    -v "$(pwd):/app/runtime/userdata" \
+    -v "${DATA_DIR}:/app/runtime/userdata" \
     -v "${APP_DATA_DIR}:/app/data" \
     -e "CONFIG_PATH=/app/runtime/userdata/config/config.platform.json" \
     -e "HOST_UID=$(id -u)" \
