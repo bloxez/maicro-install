@@ -252,10 +252,19 @@ set -e
 
 CONTAINER_NAME="maicro"
 DATA_DIR="$(cd "$(dirname "$0")" && pwd)"
+FORCE=0
+
+if [ "${1:-}" = "-f" ] || [ "${1:-}" = "--force" ]; then
+    FORCE=1
+fi
 
 echo "⚠️  This will remove the mAIcro container: ${CONTAINER_NAME}"
-printf "Remove container now? [y/N]: "
-read -r CONFIRM_CONTAINER
+if [ "$FORCE" -eq 1 ]; then
+    CONFIRM_CONTAINER="y"
+else
+    printf "Remove container now? [y/N]: "
+    read -r CONFIRM_CONTAINER
+fi
 
 case "$CONFIRM_CONTAINER" in
     y|Y|yes|YES)
@@ -272,8 +281,12 @@ esac
 echo "✅ Container removed (or was not present)."
 echo ""
 echo "Persisted data directory: ${DATA_DIR}"
-printf "Also remove persisted data from host? [y/N]: "
-read -r CONFIRM_DATA
+if [ "$FORCE" -eq 1 ]; then
+    CONFIRM_DATA="y"
+else
+    printf "Also remove persisted data from host? [y/N]: "
+    read -r CONFIRM_DATA
+fi
 
 case "$CONFIRM_DATA" in
     y|Y|yes|YES)
