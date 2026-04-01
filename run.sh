@@ -82,6 +82,85 @@ APP_DATA_DIR="${DATA_DIR}/data"
 printf "${YELLOW}📁 Data directory: ${DATA_DIR}${NC}\n"
 mkdir -p "$DATA_DIR"
 mkdir -p "$APP_DATA_DIR"
+mkdir -p "${DATA_DIR}/config"
+
+# Create platform config file
+cat > "${DATA_DIR}/config/config.platform.json" << 'CONFIGEOF'
+{
+  "Label": "mAIcro Default Configuration",
+
+  "rootKey": "{{ ROOT_KEY }}",
+  "rootUser": "{{ ROOT_USER }}",
+
+  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
+  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
+
+  "McpEnabled": true,
+  "ApiPort": 3456,
+
+  "PlatformAdmin": "platform_admin@maicro.ai",
+  "Admin1": "admin1@maicro.ai",
+  "Admin2": "admin2@maicro.ai",
+  "TestUser1": "maicro1@maicro.ai",
+  "TestUser2": "maicro2@maicro.ai",
+  "AuthProvider": "internal",
+  "AuthProviderFallback": null,
+  
+  "Auth": [
+    {
+      "id": "internal",
+      "provider": "internal",
+      "audience": "https://dev.maicro.app",
+      "issuer": "https://dev.maicro.app",
+      "tokenExpiration": "24h"
+    }
+  ],
+  
+  "Security": {
+    "allowedOrigins": ["*"],
+    "corsCredentials": true,
+    "hstsMaxAge": 31536000,
+    "hstsIncludeSubdomains": true,
+    "referrerPolicy": "strict-origin-when-cross-origin",
+    "xFrameOptions": "DENY",
+    "cspPolicy": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: ws: data:; worker-src 'self' blob:'"
+  },
+  
+  "Database": {
+    "schema": "maicro",
+    "connection": "postgresql://maicro:{{POSTGRES_PASSWORD}}@localhost:5432/maicrodb",
+    "idType": "UUID",
+    "idField": "id",
+    "idSuffix": "_id",
+    "extensions": ["vector", "uuid-ossp", "hstore", "pg_trgm", "btree_gin", "unaccent"]
+  },
+
+  "Otel": {
+    "endpoint": "http://localhost:4318",
+    "protocol": "http/protobuf",
+    "serviceName": "maicro"
+  },
+  
+  "ProjectRoot": "/app",
+  "RuntimeDataFolder": "/app/runtime/userdata",
+  "TestInputFolder": "/app/test_input",
+  "TestOutputFolder": "/app/output",
+  "TmpFolder": "/app/tmp",
+  "DocsOutputFolder": "/app/tmp/docs",
+  "LogFolder": "/app/data/logs",
+  
+  "NoAdminResolvers": null,
+  "DbSchemaLock": null,
+  "DbUseCachedSchema": null,
+  "Jwt": null,
+  "JwtSigningKey": null,
+  
+  "RandomApiPort": null,
+
+  "TraceLevel": "INFO",
+  "UnitTest": null
+}
+CONFIGEOF
 
 # Create update script
 cat > "${DATA_DIR}/update.sh" << 'EOF'
@@ -93,8 +172,16 @@ set -e
 IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
 APP_DATA_DIR="$(pwd)/data"
+CONFIG_PATH="$(pwd)/config/config.platform.json"
 
 echo "🔍 Checking for updates..."
+
+# Verify config exists
+if [ ! -f "$CONFIG_PATH" ]; then
+    echo "ERROR: Config file not found at ${CONFIG_PATH}"
+    echo "Please create the config file or re-run the initial installation."
+    exit 1
+fi
 
 # Get current image digest
 CURRENT_DIGEST=$(docker inspect --format='{{.Image}}' "$CONTAINER_NAME" 2>/dev/null || echo "")
@@ -127,9 +214,12 @@ docker run -d \
     -p "${PORT}:3456" \
     -v "$(pwd):/app/runtime/userdata" \
     -v "${APP_DATA_DIR}:/app/data" \
+    -e "CONFIG_PATH=/app/runtime/userdata/config/config.platform.json" \
     -e "HOST_UID=$(id -u)" \
     -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
+    -e "MAICRO_UNI_SECRET=${MAICRO_UNI_SECRET:-maicro-first-boot}" \
+    -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-maicro-first-boot}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
     -e "ROOT_USER=${ROOT_USER:-root_user}" \
@@ -219,9 +309,12 @@ docker run -d \
     -p "${PORT}:3456" \
     -v "${DATA_DIR}:/app/runtime/userdata" \
     -v "${APP_DATA_DIR}:/app/data" \
+    -e "CONFIG_PATH=/app/runtime/userdata/config/config.platform.json" \
     -e "HOST_UID=$(id -u)" \
     -e "HOST_GID=$(id -g)" \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
+    -e "MAICRO_UNI_SECRET=${MAICRO_UNI_SECRET:-maicro-first-boot}" \
+    -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-maicro-first-boot}" \
     -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
     -e "ROOT_USER=${ROOT_USER:-root_user}" \

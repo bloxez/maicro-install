@@ -58,6 +58,89 @@ if (-not (Test-Path $DataDir)) {
 if (-not (Test-Path $AppDataDir)) {
     New-Item -ItemType Directory -Path $AppDataDir -Force | Out-Null
 }
+if (-not (Test-Path "$DataDir\config")) {
+    New-Item -ItemType Directory -Path "$DataDir\config" -Force | Out-Null
+}
+
+# Create platform config file
+$configContent = @'
+{
+  "Label": "mAIcro Default Configuration",
+
+  "rootKey": "{{ ROOT_KEY }}",
+  "rootUser": "{{ ROOT_USER }}",
+
+  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
+  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
+
+  "McpEnabled": true,
+  "ApiPort": 3456,
+
+  "PlatformAdmin": "platform_admin@maicro.ai",
+  "Admin1": "admin1@maicro.ai",
+  "Admin2": "admin2@maicro.ai",
+  "TestUser1": "maicro1@maicro.ai",
+  "TestUser2": "maicro2@maicro.ai",
+  "AuthProvider": "internal",
+  "AuthProviderFallback": null,
+  
+  "Auth": [
+    {
+      "id": "internal",
+      "provider": "internal",
+      "audience": "https://dev.maicro.app",
+      "issuer": "https://dev.maicro.app",
+      "tokenExpiration": "24h"
+    }
+  ],
+  
+  "Security": {
+    "allowedOrigins": ["*"],
+    "corsCredentials": true,
+    "hstsMaxAge": 31536000,
+    "hstsIncludeSubdomains": true,
+    "referrerPolicy": "strict-origin-when-cross-origin",
+    "xFrameOptions": "DENY",
+    "cspPolicy": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: ws: data:; worker-src 'self' blob:'"
+  },
+  
+  "Database": {
+    "schema": "maicro",
+    "connection": "postgresql://maicro:{{POSTGRES_PASSWORD}}@localhost:5432/maicrodb",
+    "idType": "UUID",
+    "idField": "id",
+    "idSuffix": "_id",
+    "extensions": ["vector", "uuid-ossp", "hstore", "pg_trgm", "btree_gin", "unaccent"]
+  },
+
+  "Otel": {
+    "endpoint": "http://localhost:4318",
+    "protocol": "http/protobuf",
+    "serviceName": "maicro"
+  },
+  
+  "ProjectRoot": "/app",
+  "RuntimeDataFolder": "/app/runtime/userdata",
+  "TestInputFolder": "/app/test_input",
+  "TestOutputFolder": "/app/output",
+  "TmpFolder": "/app/tmp",
+  "DocsOutputFolder": "/app/tmp/docs",
+  "LogFolder": "/app/data/logs",
+  
+  "NoAdminResolvers": null,
+  "DbSchemaLock": null,
+  "DbUseCachedSchema": null,
+  "Jwt": null,
+  "JwtSigningKey": null,
+  
+  "RandomApiPort": null,
+
+  "TraceLevel": "INFO",
+  "UnitTest": null
+}
+'@
+
+Set-Content -Path "$DataDir\config\config.platform.json" -Value $configContent -Force
 
 # Create update script
 $updateScript = @'
@@ -69,8 +152,16 @@ $Image = "bloxez/maicro-g2a:latest"
 $ContainerName = "maicro"
 $Port = if ($env:MAICRO_PORT) { $env:MAICRO_PORT } else { 4321 }
 $AppDataDir = Join-Path $PSScriptRoot "data"
+$ConfigPath = Join-Path $PSScriptRoot "config" "config.platform.json"
 
 Write-Host "🔍 Checking for updates..."
+
+# Verify config exists
+if (-not (Test-Path $ConfigPath)) {
+    Write-Host "ERROR: Config file not found at $ConfigPath" -ForegroundColor Red
+    Write-Host "Please create the config file or re-run the initial installation." -ForegroundColor Red
+    exit 1
+}
 
 # Get current image digest
 $currentDigest = docker inspect --format='{{.Image}}' $ContainerName 2>$null
@@ -105,6 +196,7 @@ $dockerArgs = @(
     "-p", "${Port}:3456",
     "-v", "${PSScriptRoot}:/app/runtime/userdata",
     "-v", "${AppDataDir}:/app/data",
+    "-e", "CONFIG_PATH=/app/runtime/userdata/config/config.platform.json",
     "--restart", "unless-stopped"
 )
 
@@ -205,6 +297,7 @@ $dockerArgs = @(
     "-p", "${Port}:3456",
     "-v", "${DataDir}:/app/runtime/userdata",
     "-v", "${AppDataDir}:/app/data",
+    "-e", "CONFIG_PATH=/app/runtime/userdata/config/config.platform.json",
     "--restart", "unless-stopped"
 )
 
