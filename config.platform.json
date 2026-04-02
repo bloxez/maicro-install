@@ -1,0 +1,89 @@
+{
+  "Label": "mAIcro Default Configuration",
+
+  "rootKey": "{{ ROOT_KEY }}",
+  "rootUser": "{{ ROOT_USER }}",
+
+  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
+  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
+
+  "McpEnabled": true,
+  "ApiPort": 3456,
+
+  "PlatformAdmin": "platform_admin@maicro.ai",
+  "Admin1": "admin1@maicro.ai",
+  "Admin2": "admin2@maicro.ai",
+  "TestUser1": "maicro1@maicro.ai",
+  "TestUser2": "maicro2@maicro.ai",
+  "AuthProvider": "internal",
+  "AuthProviderFallback": null,
+  
+  "Auth": [
+    {
+      "id": "internal",
+      "provider": "internal",
+      "audience": "https://dev.maicro.app",
+      "issuer": "https://dev.maicro.app",
+      "tokenExpiration": "24h"
+    }
+  ],
+  
+  "SessionVariables": {
+    "azp": "azp",
+    "aud": "aud",
+    "gty": "gty",
+    "iss": "iss",
+    "iat": "iat",
+    "exp": "exp",
+    "sub": "sub",
+    "email": "email",
+    "permissions": "permissions",
+    "scope": "scope",
+    "roles": "roles",
+    "team_label": "team_label",
+    "role_label": "role_label"
+  },
+
+  "Security": {
+    "allowedOrigins": ["http://localhost:5173", "http://host.docker.internal:5173"],
+    "corsCredentials": true,
+    "hstsMaxAge": 31536000,
+    "hstsIncludeSubdomains": true,
+    "referrerPolicy": "strict-origin-when-cross-origin",
+    "xFrameOptions": "DENY",
+    "cspPolicy": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: ws: data:; worker-src 'self' blob:'"
+  },
+  
+  "Database": {
+    "schema": "maicro",
+    "idType": "UUID",
+    "idField": "id",
+    "idSuffix": "_id",
+    "extensions": ["vector", "uuid-ossp", "hstore", "pg_trgm", "btree_gin", "unaccent"]
+  },
+
+  "Otel": {
+    "endpoint": "http://host.docker.internal:4318",
+    "protocol": "http/protobuf",
+    "serviceName": "maicro"
+  },
+  
+  "ProjectRoot": "/workspaces/maicro",
+  "RuntimeDataFolder": "/workspaces/maicro/runtime",
+  "TestInputFolder": "/workspaces/maicro/backend/test/test_input",
+  "TestOutputFolder": "/workspaces/maicro/tmp/output",
+  "TmpFolder": "/workspaces/maicro/tmp",
+  "DocsOutputFolder": "/workspaces/maicro/tmp/docs",
+  "LogFolder": "/workspaces/maicro/tmp/logs",
+  
+  "NoAdminResolvers": null,
+  "DbSchemaLock": null,
+  "DbUseCachedSchema": null,
+  "Jwt": null,
+  "JwtSigningKey": null,
+  
+  "RandomApiPort": null,
+
+  "TraceLevel": "INFO",
+  "UnitTest": null
+}

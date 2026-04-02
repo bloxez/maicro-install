@@ -10,6 +10,11 @@ param(
 # Configuration
 $Image = "bloxez/maicro-g2a:latest"
 $ContainerName = "maicro"
+$ConfigTemplateUrl = if ($env:MAICRO_CONFIG_TEMPLATE_URL) {
+    $env:MAICRO_CONFIG_TEMPLATE_URL
+} else {
+    "https://raw.githubusercontent.com/bloxez/maicro-install/main/config.platform.json"
+}
 
 Write-Host ""
 Write-Host "  ███╗   ███╗ █████╗ ██╗ ██████╗██████╗  ██████╗ " -ForegroundColor Cyan
@@ -62,85 +67,15 @@ if (-not (Test-Path "$DataDir\config")) {
     New-Item -ItemType Directory -Path "$DataDir\config" -Force | Out-Null
 }
 
-# Create platform config file
-$configContent = @'
-{
-  "Label": "mAIcro Default Configuration",
-
-  "rootKey": "{{ ROOT_KEY }}",
-  "rootUser": "{{ ROOT_USER }}",
-
-  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
-  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
-
-  "McpEnabled": true,
-  "ApiPort": 3456,
-
-  "PlatformAdmin": "platform_admin@maicro.ai",
-  "Admin1": "admin1@maicro.ai",
-  "Admin2": "admin2@maicro.ai",
-  "TestUser1": "maicro1@maicro.ai",
-  "TestUser2": "maicro2@maicro.ai",
-  "AuthProvider": "internal",
-  "AuthProviderFallback": null,
-  
-  "Auth": [
-    {
-      "id": "internal",
-      "provider": "internal",
-      "audience": "https://dev.maicro.app",
-      "issuer": "https://dev.maicro.app",
-      "tokenExpiration": "24h"
-    }
-  ],
-  
-  "Security": {
-    "allowedOrigins": ["*"],
-    "corsCredentials": true,
-    "hstsMaxAge": 31536000,
-    "hstsIncludeSubdomains": true,
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "xFrameOptions": "DENY",
-    "cspPolicy": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: ws: data:; worker-src 'self' blob:'"
-  },
-  
-  "Database": {
-    "schema": "maicro",
-    "connection": "postgresql://maicro:{{POSTGRES_PASSWORD}}@localhost:5432/maicrodb",
-    "idType": "UUID",
-    "idField": "id",
-    "idSuffix": "_id",
-    "extensions": ["vector", "uuid-ossp", "hstore", "pg_trgm", "btree_gin", "unaccent"]
-  },
-
-  "Otel": {
-    "endpoint": "http://localhost:4318",
-    "protocol": "http/protobuf",
-    "serviceName": "maicro"
-  },
-  
-  "ProjectRoot": "/app",
-  "RuntimeDataFolder": "/app/runtime/userdata",
-  "TestInputFolder": "/app/test_input",
-  "TestOutputFolder": "/app/output",
-  "TmpFolder": "/app/tmp",
-  "DocsOutputFolder": "/app/tmp/docs",
-  "LogFolder": "/app/data/logs",
-  
-  "NoAdminResolvers": null,
-  "DbSchemaLock": null,
-  "DbUseCachedSchema": null,
-  "Jwt": null,
-  "JwtSigningKey": null,
-  
-  "RandomApiPort": null,
-
-  "TraceLevel": "INFO",
-  "UnitTest": null
+# Create platform config file from published template
+$configPath = Join-Path $DataDir "config" "config.platform.json"
+Write-Host "🧩 Downloading platform config template..." -ForegroundColor Yellow
+try {
+        Invoke-WebRequest -UseBasicParsing -Uri $ConfigTemplateUrl -OutFile $configPath
+} catch {
+        Write-Host "❌ Failed to download config template from $ConfigTemplateUrl" -ForegroundColor Red
+        exit 1
 }
-'@
-
-Set-Content -Path "$DataDir\config\config.platform.json" -Value $configContent -Force
 
 # Create update script
 $updateScript = @'
@@ -153,14 +88,30 @@ $ContainerName = "maicro"
 $Port = if ($env:MAICRO_PORT) { $env:MAICRO_PORT } else { 4321 }
 $AppDataDir = Join-Path $PSScriptRoot "data"
 $ConfigPath = Join-Path $PSScriptRoot "config" "config.platform.json"
+$ConfigTemplateUrl = if ($env:MAICRO_CONFIG_TEMPLATE_URL) {
+    $env:MAICRO_CONFIG_TEMPLATE_URL
+} else {
+    "https://raw.githubusercontent.com/bloxez/maicro-install/main/config.platform.json"
+}
 
 Write-Host "🔍 Checking for updates..."
 
-# Verify config exists
-if (-not (Test-Path $ConfigPath)) {
-    Write-Host "ERROR: Config file not found at $ConfigPath" -ForegroundColor Red
-    Write-Host "Please create the config file or re-run the initial installation." -ForegroundColor Red
+# Sync config template on every update to keep schema changes aligned
+$tmpConfigPath = "$ConfigPath.tmp"
+$configChanged = $false
+Write-Host "🧩 Syncing platform config template..."
+try {
+    Invoke-WebRequest -UseBasicParsing -Uri $ConfigTemplateUrl -OutFile $tmpConfigPath
+} catch {
+    Write-Host "ERROR: Failed to download config template from $ConfigTemplateUrl" -ForegroundColor Red
     exit 1
+}
+
+if ((Test-Path $ConfigPath) -and (Get-FileHash $ConfigPath).Hash -eq (Get-FileHash $tmpConfigPath).Hash) {
+    Remove-Item -Path $tmpConfigPath -Force
+} else {
+    Move-Item -Path $tmpConfigPath -Destination $ConfigPath -Force
+    $configChanged = $true
 }
 
 # Get current image digest
@@ -175,8 +126,14 @@ docker pull $Image
 $newDigest = docker inspect --format='{{.Id}}' $Image 2>$null
 
 if ($currentDigest -eq $newDigest) {
-    Write-Host "✅ Already on latest version" -ForegroundColor Green
-    exit 0
+    if ($configChanged) {
+        Write-Host "✅ Image unchanged, but config template updated. Restarting container..." -ForegroundColor Green
+        docker stop $ContainerName 2>$null | Out-Null
+        docker rm $ContainerName 2>$null | Out-Null
+    } else {
+        Write-Host "✅ Already on latest version" -ForegroundColor Green
+        exit 0
+    }
 }
 
 Write-Host "🔄 New version available, updating..." -ForegroundColor Yellow

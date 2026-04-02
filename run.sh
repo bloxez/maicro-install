@@ -11,6 +11,7 @@ IMAGE="bloxez/maicro-g2a:latest"
 CONTAINER_NAME="maicro"
 PORT="${MAICRO_PORT:-4321}"
 DEFAULT_DATA_DIR="$HOME/maicro-data"
+CONFIG_TEMPLATE_URL="${MAICRO_CONFIG_TEMPLATE_URL:-https://raw.githubusercontent.com/bloxez/maicro-install/main/config.platform.json}"
 
 # Colors (using printf for POSIX compatibility)
 RED='\033[0;31m'
@@ -84,83 +85,12 @@ mkdir -p "$DATA_DIR"
 mkdir -p "$APP_DATA_DIR"
 mkdir -p "${DATA_DIR}/config"
 
-# Create platform config file
-cat > "${DATA_DIR}/config/config.platform.json" << 'CONFIGEOF'
-{
-  "Label": "mAIcro Default Configuration",
-
-  "rootKey": "{{ ROOT_KEY }}",
-  "rootUser": "{{ ROOT_USER }}",
-
-  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
-  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
-
-  "McpEnabled": true,
-  "ApiPort": 3456,
-
-  "PlatformAdmin": "platform_admin@maicro.ai",
-  "Admin1": "admin1@maicro.ai",
-  "Admin2": "admin2@maicro.ai",
-  "TestUser1": "maicro1@maicro.ai",
-  "TestUser2": "maicro2@maicro.ai",
-  "AuthProvider": "internal",
-  "AuthProviderFallback": null,
-  
-  "Auth": [
-    {
-      "id": "internal",
-      "provider": "internal",
-      "audience": "https://dev.maicro.app",
-      "issuer": "https://dev.maicro.app",
-      "tokenExpiration": "24h"
-    }
-  ],
-  
-  "Security": {
-    "allowedOrigins": ["*"],
-    "corsCredentials": true,
-    "hstsMaxAge": 31536000,
-    "hstsIncludeSubdomains": true,
-    "referrerPolicy": "strict-origin-when-cross-origin",
-    "xFrameOptions": "DENY",
-    "cspPolicy": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.skypack.dev; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data: https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' https: wss: ws: data:; worker-src 'self' blob:'"
-  },
-  
-  "Database": {
-    "schema": "maicro",
-    "connection": "postgresql://maicro:{{POSTGRES_PASSWORD}}@localhost:5432/maicrodb",
-    "idType": "UUID",
-    "idField": "id",
-    "idSuffix": "_id",
-    "extensions": ["vector", "uuid-ossp", "hstore", "pg_trgm", "btree_gin", "unaccent"]
-  },
-
-  "Otel": {
-    "endpoint": "http://localhost:4318",
-    "protocol": "http/protobuf",
-    "serviceName": "maicro"
-  },
-  
-  "ProjectRoot": "/app",
-  "RuntimeDataFolder": "/app/runtime/userdata",
-  "TestInputFolder": "/app/test_input",
-  "TestOutputFolder": "/app/output",
-  "TmpFolder": "/app/tmp",
-  "DocsOutputFolder": "/app/tmp/docs",
-  "LogFolder": "/app/data/logs",
-  
-  "NoAdminResolvers": null,
-  "DbSchemaLock": null,
-  "DbUseCachedSchema": null,
-  "Jwt": null,
-  "JwtSigningKey": null,
-  
-  "RandomApiPort": null,
-
-  "TraceLevel": "INFO",
-  "UnitTest": null
-}
-CONFIGEOF
+# Create platform config file from the published template
+printf "${YELLOW}🧩 Downloading platform config template...${NC}\n"
+if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "${DATA_DIR}/config/config.platform.json"; then
+        printf "${RED}❌ Failed to download config template from:${NC} %s\n" "$CONFIG_TEMPLATE_URL"
+        exit 1
+fi
 
 # Create update script
 cat > "${DATA_DIR}/update.sh" << 'EOF'
@@ -174,14 +104,24 @@ CONTAINER_NAME="maicro"
 DATA_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DATA_DIR="${DATA_DIR}/data"
 CONFIG_PATH="${DATA_DIR}/config/config.platform.json"
+CONFIG_TEMPLATE_URL="${MAICRO_CONFIG_TEMPLATE_URL:-https://raw.githubusercontent.com/bloxez/maicro-install/main/config.platform.json}"
 
 echo "🔍 Checking for updates..."
 
-# Verify config exists
-if [ ! -f "$CONFIG_PATH" ]; then
-    echo "ERROR: Config file not found at ${CONFIG_PATH}"
-    echo "Please create the config file or re-run the initial installation."
+# Sync config template on every update to keep schema changes aligned
+TMP_CONFIG="${CONFIG_PATH}.tmp"
+CONFIG_CHANGED=0
+echo "🧩 Syncing platform config template..."
+if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "$TMP_CONFIG"; then
+    echo "ERROR: Failed to download config template from ${CONFIG_TEMPLATE_URL}"
     exit 1
+fi
+
+if [ -f "$CONFIG_PATH" ] && cmp -s "$CONFIG_PATH" "$TMP_CONFIG"; then
+    rm -f "$TMP_CONFIG"
+else
+    mv "$TMP_CONFIG" "$CONFIG_PATH"
+    CONFIG_CHANGED=1
 fi
 
 # Get current image digest
@@ -195,8 +135,14 @@ docker pull "$IMAGE"
 NEW_DIGEST=$(docker inspect --format='{{.Id}}' "$IMAGE" 2>/dev/null || echo "")
 
 if [ "$CURRENT_DIGEST" = "$NEW_DIGEST" ]; then
+        if [ "$CONFIG_CHANGED" -eq 1 ]; then
+            echo "✅ Image unchanged, but config template updated. Restarting container..."
+            docker stop "$CONTAINER_NAME" 2>/dev/null || true
+            docker rm "$CONTAINER_NAME" 2>/dev/null || true
+        else
     echo "✅ Already on latest version"
     exit 0
+        fi
 fi
 
 echo "🔄 New version available, updating..."
