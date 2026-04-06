@@ -85,11 +85,16 @@ mkdir -p "$DATA_DIR"
 mkdir -p "$APP_DATA_DIR"
 mkdir -p "${DATA_DIR}/config"
 
-# Create platform config file from the published template
-printf "${YELLOW}🧩 Downloading platform config template...${NC}\n"
-if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "${DATA_DIR}/config/config.platform.json"; then
+# Create platform config file from the published template (only if it doesn't already exist)
+CONFIG_FILE="${DATA_DIR}/config/config.platform.json"
+if [ -f "$CONFIG_FILE" ]; then
+    printf "${GREEN}✅ Platform config already exists, skipping download${NC}\n"
+else
+    printf "${YELLOW}🧩 Downloading platform config template...${NC}\n"
+    if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "$CONFIG_FILE"; then
         printf "${RED}❌ Failed to download config template from:${NC} %s\n" "$CONFIG_TEMPLATE_URL"
         exit 1
+    fi
 fi
 
 # Create update script
@@ -106,22 +111,35 @@ APP_DATA_DIR="${DATA_DIR}/data"
 CONFIG_PATH="${DATA_DIR}/config/config.platform.json"
 CONFIG_TEMPLATE_URL="${MAICRO_CONFIG_TEMPLATE_URL:-https://raw.githubusercontent.com/bloxez/maicro-install/main/config.platform.json}"
 
+# Parse flags
+FORCE_CONFIG=0
+for arg in "$@"; do
+    case "$arg" in
+        -f|--force) FORCE_CONFIG=1 ;;
+    esac
+done
+
 echo "🔍 Checking for updates..."
 
-# Sync config template on every update to keep schema changes aligned
-TMP_CONFIG="${CONFIG_PATH}.tmp"
+# Download config template only if it doesn't exist, or -f flag is set
 CONFIG_CHANGED=0
-echo "🧩 Syncing platform config template..."
-if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "$TMP_CONFIG"; then
-    echo "ERROR: Failed to download config template from ${CONFIG_TEMPLATE_URL}"
-    exit 1
-fi
-
-if [ -f "$CONFIG_PATH" ] && cmp -s "$CONFIG_PATH" "$TMP_CONFIG"; then
-    rm -f "$TMP_CONFIG"
-else
-    mv "$TMP_CONFIG" "$CONFIG_PATH"
+if [ "$FORCE_CONFIG" -eq 1 ]; then
+    echo "🧩 Force-updating platform config template..."
+    if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "$CONFIG_PATH"; then
+        echo "ERROR: Failed to download config template from ${CONFIG_TEMPLATE_URL}"
+        exit 1
+    fi
     CONFIG_CHANGED=1
+elif [ ! -f "$CONFIG_PATH" ]; then
+    echo "🧩 Downloading platform config template (first time)..."
+    mkdir -p "$(dirname "$CONFIG_PATH")"
+    if ! curl -fsSL "$CONFIG_TEMPLATE_URL" -o "$CONFIG_PATH"; then
+        echo "ERROR: Failed to download config template from ${CONFIG_TEMPLATE_URL}"
+        exit 1
+    fi
+    CONFIG_CHANGED=1
+else
+    echo "✅ Platform config exists, preserving local customisations (use -f to overwrite)"
 fi
 
 # Get current image digest
