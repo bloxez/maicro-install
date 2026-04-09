@@ -76,9 +76,8 @@
   "DocsOutputFolder": "/workspaces/maicro/tmp/docs",
   "LogFolder": "/workspaces/maicro/tmp/logs",
   
-  "NoAdminResolvers": null,
+  "PreventGqlAdminResolvers": null,
   "DbSchemaLock": null,
-  "DbUseCachedSchema": null,
   "Jwt": null,
   "JwtSigningKey": null,
   
