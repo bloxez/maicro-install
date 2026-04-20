@@ -185,9 +185,8 @@ docker run -d \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_UNI_SECRET=${MAICRO_UNI_SECRET:-maicro-first-boot}" \
     -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-maicro-first-boot}" \
-    -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
-    -e "ROOT_USER=${ROOT_USER:-root_user}" \
+    -e "ROOT_PROJECT=${ROOT_PROJECT:-root_project}" \
     -e "ROOT_KEY=${ROOT_KEY:-rootg2a}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \
@@ -293,9 +292,8 @@ docker run -d \
     -e "OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}" \
     -e "MAICRO_UNI_SECRET=${MAICRO_UNI_SECRET:-maicro-first-boot}" \
     -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-maicro-first-boot}" \
-    -e "MAICRO_DEFAULT_PROJECT=${MAICRO_DEFAULT_PROJECT:-maicro}" \
     -e "MAICRO_ADMIN_KEY=${MAICRO_ADMIN_KEY:-maicrog2a}" \
-    -e "ROOT_USER=${ROOT_USER:-root_user}" \
+    -e "ROOT_PROJECT=${ROOT_PROJECT:-root_project}" \
     -e "ROOT_KEY=${ROOT_KEY:-rootg2a}" \
     --add-host=host.docker.internal:host-gateway \
     --restart unless-stopped \

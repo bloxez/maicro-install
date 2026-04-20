@@ -161,15 +161,13 @@ if ($OpenRouterKey) {
     $dockerArgs += @("-e", "OPENROUTER_API_KEY=$OpenRouterKey")
 }
 
-# Add project authentication and root management variables
-$DockerDefaultProject = if ($env:MAICRO_DEFAULT_PROJECT) { $env:MAICRO_DEFAULT_PROJECT } else { "maicro" }
+# Add authentication and root management variables
 $DockerAdminKey = if ($env:MAICRO_ADMIN_KEY) { $env:MAICRO_ADMIN_KEY } else { "" }
-$DockerRootUser = if ($env:ROOT_USER) { $env:ROOT_USER } else { "" }
+$DockerRootProject = if ($env:ROOT_PROJECT) { $env:ROOT_PROJECT } else { "" }
 $DockerRootKey = if ($env:ROOT_KEY) { $env:ROOT_KEY } else { "" }
 
-$dockerArgs += @("-e", "MAICRO_DEFAULT_PROJECT=$DockerDefaultProject")
 if ($DockerAdminKey) { $dockerArgs += @("-e", "MAICRO_ADMIN_KEY=$DockerAdminKey") }
-if ($DockerRootUser) { $dockerArgs += @("-e", "ROOT_USER=$DockerRootUser") }
+if ($DockerRootProject) { $dockerArgs += @("-e", "ROOT_PROJECT=$DockerRootProject") }
 if ($DockerRootKey) { $dockerArgs += @("-e", "ROOT_KEY=$DockerRootKey") }
 
 $dockerArgs += $Image
@@ -262,15 +260,13 @@ if ($OpenRouterKey) {
     $dockerArgs += @("-e", "OPENROUTER_API_KEY=$OpenRouterKey")
 }
 
-# Add project authentication and root management variables
-$DockerDefaultProject = if ($env:MAICRO_DEFAULT_PROJECT) { $env:MAICRO_DEFAULT_PROJECT } else { "maicro" }
+# Add authentication and root management variables
 $DockerAdminKey = if ($env:MAICRO_ADMIN_KEY) { $env:MAICRO_ADMIN_KEY } else { "" }
-$DockerRootUser = if ($env:ROOT_USER) { $env:ROOT_USER } else { "" }
+$DockerRootProject = if ($env:ROOT_PROJECT) { $env:ROOT_PROJECT } else { "" }
 $DockerRootKey = if ($env:ROOT_KEY) { $env:ROOT_KEY } else { "" }
 
-$dockerArgs += @("-e", "MAICRO_DEFAULT_PROJECT=$DockerDefaultProject")
 if ($DockerAdminKey) { $dockerArgs += @("-e", "MAICRO_ADMIN_KEY=$DockerAdminKey") }
-if ($DockerRootUser) { $dockerArgs += @("-e", "ROOT_USER=$DockerRootUser") }
+if ($DockerRootProject) { $dockerArgs += @("-e", "ROOT_PROJECT=$DockerRootProject") }
 if ($DockerRootKey) { $dockerArgs += @("-e", "ROOT_KEY=$DockerRootKey") }
 
 $dockerArgs += $Image

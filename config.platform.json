@@ -2,10 +2,7 @@
   "Label": "mAIcro Default Configuration",
 
   "rootKey": "{{ ROOT_KEY }}",
-  "rootUser": "{{ ROOT_USER }}",
-
-  "defaultProject": "{{ MAICRO_DEFAULT_PROJECT }}",
-  "maicroAdminKey": "{{ MAICRO_ADMIN_KEY }}",
+  "rootProject": "{{ ROOT_PROJECT }}",
 
   "McpEnabled": true,
   "ApiPort": 3456,

@@ -97,9 +97,8 @@ powershell $env:USERPROFILE\maicro-data\remove.ps1
 |----------|-------------|---------|
 | `MAICRO_PORT` | Host port to expose mAIcro on | 4321 |
 | `OPENROUTER_API_KEY` | API key for LLM operations (optional) | - |
-| `MAICRO_DEFAULT_PROJECT` | Project name used in `project:key` authentication | maicro |
 | `MAICRO_ADMIN_KEY` | Admin API key for this project | - |
-| `ROOT_USER` | Root control-plane username for multi-project management (optional) | - |
+| `ROOT_PROJECT` | Root control-plane identifier for multi-project management (optional) | - |
 | `ROOT_KEY` | Root control-plane key for multi-project management (optional) | - |
 
 ### Using Environment Variables
@@ -108,7 +107,6 @@ Set environment variables before running the installation script:
 
 **Linux/macOS:**
 ```bash
-export MAICRO_DEFAULT_PROJECT="myproject"
 export MAICRO_ADMIN_KEY="my-secure-admin-key"
 export MAICRO_PORT=8080
 
@@ -117,28 +115,26 @@ curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh |
 
 **Windows (PowerShell):**
 ```powershell
-$env:MAICRO_DEFAULT_PROJECT = "myproject"
 $env:MAICRO_ADMIN_KEY = "my-secure-admin-key"
 $env:MAICRO_PORT = "8080"
 
 irm https://raw.githubusercontent.com/bloxez/maicro-install/main/run.ps1 | iex
 ```
 
-### Project Authentication
+### Admin Authentication
 
 mAIcro uses `project:key` format for admin authentication:
 
-- The `X-MAICRO-ADMIN-KEY` header expects: `<MAICRO_DEFAULT_PROJECT>:<MAICRO_ADMIN_KEY>`
+- The `X-MAICRO-ADMIN-KEY` header expects: `<schema>:<MAICRO_ADMIN_KEY>` where `<schema>` is the `Database.schema` value in config (default: `maicro`)
 - Example: `maicro:my-secure-admin-key`
 
 ### Root Control-Plane (Optional)
 
-For multi-project deployments, set `ROOT_USER` and `ROOT_KEY` to manage multiple mAIcro instances:
+For multi-project deployments, set `ROOT_PROJECT` and `ROOT_KEY` to manage multiple mAIcro instances:
 
 ```bash
-export ROOT_USER="root_admin"
+export ROOT_PROJECT="root_admin"
 export ROOT_KEY="root-secure-key"
-export MAICRO_DEFAULT_PROJECT="instance1"
 export MAICRO_ADMIN_KEY="instance1-key"
 
 curl -fsSL https://raw.githubusercontent.com/bloxez/maicro-install/main/run.sh | sh
